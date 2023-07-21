@@ -1,8 +1,8 @@
 # Login to the Exchange Online tenant of the customer
-Connect-ExchangeOnline
+#Connect-ExchangeOnline
 $customerName = (Get-OrganizationConfig | Select-Object identity).Identity
 
-$policyTypes = "AntiPhishPolicy","HostedContentFilterPolicy","MalwareFilterPolicy","SafeAttachmentPolicy","SafeLinksPolicy"
+$policyTypes = "AntiPhishPolicy","HostedContentFilterPolicy","HostedConnectionFilterPolicy","HostedOutboundSpamFilterPolicy","MalwareFilterPolicy","SafeAttachmentPolicy","SafeLinksPolicy"
 $helpDescriptions = @()
 $data = @()
 
