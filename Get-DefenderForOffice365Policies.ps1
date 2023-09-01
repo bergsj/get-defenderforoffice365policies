@@ -1,8 +1,11 @@
 # Login to the Exchange Online tenant of the customer
-#Connect-ExchangeOnline
-$customerName = (Get-OrganizationConfig | Select-Object identity).Identity
+if  (-not (Get-OrganizationConfig -ErrorAction SilentlyContinue)){
+    $tenant = Read-Host -Prompt "Enter tenant name (eg: customer.onmicrosoft.com"
+    Import-Module ExchangeOnlineManagement
+    Connect-ExchangeOnline -DelegatedOrganization $tenant
+}
 
-$policyTypes = "AntiPhishPolicy","HostedContentFilterPolicy","HostedConnectionFilterPolicy","HostedOutboundSpamFilterPolicy","MalwareFilterPolicy","SafeAttachmentPolicy","SafeLinksPolicy"
+$policyTypes = "AntiPhishPolicy","HostedContentFilterPolicy","HostedConnectionFilterPolicy","HostedOutboundSpamFilterPolicy","MalwareFilterPolicy","SafeAttachmentPolicy","SafeLinksPolicy","QuarantinePolicy","HostedOutboundSpamFilterPolicy"
 $helpDescriptions = @()
 $data = @()
 
@@ -49,5 +52,48 @@ foreach ($policyType in $policyTypes){
     }
     
 }
-$data | ConvertTo-Json -Depth 2 | Out-File "EOP-policies.json"
-$helpDescriptions | ConvertTo-Json -Depth 2 | Out-File "HelpDescriptions.json"
+$data | ConvertTo-Json -Depth 2 | Out-File "defender-office365-policies.json"
+$helpDescriptions | ConvertTo-Json -Depth 2 | Out-File "helpdescriptions.json"
+
+
+<#
+## EOP policies:
+# Anti-phising policies
+Get-AntiPhishPolicy
+
+# Anti-spam policies
+Get-HostedContentFilterPolicy
+Get-HostedOutboundSpamFilterPolicy
+
+# Anti-malware policies
+Get-MalwareFilterPolicy
+
+#Quarantine policies
+Get-QuarantinePolicy
+
+## Defender for Office 365 policies:
+# SafeAttachment policies
+Get-SafeAttachmentPolicy
+
+# SafeLinks policies
+Get-SafeLinksPolicy
+#>
+
+<#
+## TODO: Add export files for the following information
+# Rules for Exchange Online Protection (EOP) protections:
+$eOPProtectionPolicyRules = Get-EOPProtectionPolicyRule
+
+# Rules for Defender for Office 365 protections:
+$aTPProtectionPolicyRules = Get-ATPProtectionPolicyRule
+
+# The rule for the Build-in protection preset security policy:
+$aTPBuiltInProtectionRules = Get-ATPBuiltInProtectionRule
+
+# Tenant Allow/Block List items
+Get-TenantAllowBlockListItems -ListType (FileHash, Url, Sender, BulkSender, Recipient, IP)
+Get-TenantAllowBlockListSpoofItems
+
+# Get overall Preset policy status
+Get-EOPProtectionPolicyRule
+#>
