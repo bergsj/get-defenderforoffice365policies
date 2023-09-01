@@ -53,7 +53,7 @@ foreach ($policyType in $policyTypes){
         $command = "Get-$policyType -$($argumentAndValue[0]) $($argumentAndValue[1])"
     }
     if ($policyType -match "\?"){
-        $command = $command.Trim("??")
+        $command = $policyType = $command.Trim("??")
         $getHelp = $false
     }
     
@@ -120,75 +120,3 @@ $excel = Get-Content "helpdescriptions.json" | ConvertFrom-Json | Export-Excel -
 $sheet = $excel.Workbook.Worksheets["Sheet1"]
 $sheet.Column(3) | Set-ExcelRange -width 100 -WrapText
 Export-Excel -ExcelPackage $excel
-
-
-<#
-
-### Information on the cmdlets and where to find this in the portal ###
-
-## EOP policies:
-# Anti-phising policies (Policies & rules > Threat policies > Anti-phishing)
-Get-AntiPhishPolicy 
-# Use the Get-AntiPhishPolicy cmdlet to view antiphish policies in your cloud-based organization. This cmdlet returns results only in Exchange Online PowerShell.
-
-# Anti-spam policies (Policies & rules > Threat policies > Anti-spam)
-Get-HostedContentFilterPolicy 
-# Use the Get-HostedContentFilterPolicy cmdlet to view the settings of spam filter policies (content filter policies) in your cloud-based organization.
-Get-HostedOutboundSpamFilterPolicy
-# Use the Get-HostedOutboundSpamFilterPolicy cmdlet to view outbound spam filter policies in your cloud-based organization.
-
-# Anti-malware policies (Policies & rules > Threat policies > Anti-malware)
-Get-MalwareFilterPolicy
-# Use the Get-MalwareFilterPolicy cmdlet to view the malware filter policies in your organization.
-
-#Quarantine policies (Policies & rules > Threat policies > Quarantine policies)
-Get-QuarantinePolicy
-# Use the Get-QuarantinePolicy cmdlet to view quarantine policies in your cloud-based organization.
-
-## Defender for Office 365 policies:
-# SafeAttachment policies (Policies & rules > Threat policies > Safe Attachments)
-Get-SafeAttachmentPolicy
-# Use the Get-SafeAttachmentPolicy cmdlet to view safe attachment policies in your cloud-based organization.
-
-# SafeLinks policies (Policies & rules > Threat policies > Safe Links)
-Get-SafeLinksPolicy
-# Use the Get-SafeLinksPolicy cmdlet to view Safe Links policies in your cloud-based organization.
-
-## Rules for Exchange Online Protection (EOP) protections: 
-Get-EOPProtectionPolicyRule (Policies & rules > Threat policies > Preset security policies > Standard/Strict Protection > Manage protection settings > Exchange online protection)
-# Use the Get-EOPProtectionPolicyRule cmdlet to view rules for Exchange Online Protection (EOP) protections in preset security policies. 
-# The rules specify recipient conditions and exceptions for the protection, and also allow you to turn on and turn off the associated preset
-# security policies.
-
-## Policy and rules for Teams protection (Settings > Email & collaboration > Microsoft Teams Protection)
-Get-TeamsProtectionPolicy
-# Use the Get-TeamsProtectionPolicy cmdlet to view Microsoft Teams protection policies
-Get-TeamsProtectionPolicyRule
-# Use the Get-TeamsProtectionPolicyRule cmdlet to view Microsoft Teams protection policy rules.
-
-## Rules for Defender for Office 365 protections:
-Get-ATPProtectionPolicyRule (Policies & rules > Threat policies > Preset security policies > Standard/Strict Protection > Manage protection settings > Defender for Office 365 protection)
-# Use the Get-ATPProtectionPolicyRule cmdlet to view rules for Microsoft Defender for Office 365 protections in preset security policies. 
-# The rules specify recipient conditions and exceptions for the protection, and also allow you to turn on and turn off the associated preset
-# security policies.
-
-Get-ATPBuiltInProtectionRule (Settings > Email & collaboration > Preset security policies > Built-in protection > Add exclusions (Not recommended))
-# Use the Get-ATPBuiltInProtectionRule cmdlet to view the rule for the Built-in protection preset security policy that effectively provides 
-# default policies for Safe Links and Safe Attachments in Microsoft Defender for Office 365. The rule specifies exceptions to the policy.
-
-Get-AtpPolicyForO365 (Policies & rules > Threat policies > Safe attachments > Global settings)
-# Use the Get-AtpPolicyForO365 cmdlet to view the settings for the following features in Microsoft Defender for Office 365:
-# Safe Links protection for supported Office 365 apps.
-# Safe Documents: Uses Microsoft Defender for Endpoint to scan documents and files that are opened in Protected View in Microsoft 365 apps for enterprise.
-# Safe Attachments for SharePoint, OneDrive, and Microsoft Teams.
-
-# Tenant Allow/Block List items
-Get-TenantAllowBlockListItems -ListType Sender [Feature not yet enabled for: BulkSender, Recipient, IP] (Policies & rules > Threat policies > Tenant Allow/Block List > Domains & addresses)
-Get-TenantAllowBlockListItems -ListType Url [Feature not yet enabled for: BulkSender, Recipient, IP]) (Policies & rules > Threat policies > Tenant Allow/Block List > Urls)
-Get-TenantAllowBlockListItems -ListType FileHash [Feature not yet enabled for: BulkSender, Recipient, IP]) (Policies & rules > Threat policies > Tenant Allow/Block List > Files)
-# Use the Get-TenantAllowBlockListItems cmdlet to view entries in the Tenant Allow/Block List in the Microsoft 365 Defender portal.
-
-Get-TenantAllowBlockListSpoofItems (Policies & rules > Threat policies > Tenant Allow/Block List > Spoofed Senders)
-# Use the Get-TenantAllowBlockListSpoofItems cmdlet to view spoofed sender entries in the Tenant Allow/Block List.
-
-#>
