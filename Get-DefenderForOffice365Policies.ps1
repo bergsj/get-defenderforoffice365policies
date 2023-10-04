@@ -1,24 +1,30 @@
 # Install and import the module ExchangeOnlineManagement
 if(-not (Get-Module ExchangeOnlineManagement -ListAvailable)){
     Install-Module ExchangeOnlineManagement -Scope CurrentUser -Force
-    Import-Module ExchangeOnlineManagement
+    Import-Module ExchangeOnlineManagement -DisableNameChecking
 }
 # Install and import the module ImportExcel (https://github.com/dfinke/ImportExcel)
 if(-not (Get-Module ImportExcel -ListAvailable)){
     Install-Module ImportExcel -Scope CurrentUser -Force
-    Import-Module ImportExcel
+    Import-Module ImportExcel -DisableNameChecking
 }
 # Login to the Exchange Online tenant of the customer
+Write-Host "Login to the Exchange Online"
 $testdata = (Get-EXOMailbox -ResultSize 1 -ErrorAction SilentlyContinue)
 if (-not $testdata){
     $tenant = Read-Host -Prompt "Enter tenant name (eg: customer.onmicrosoft.com"
-    Import-Module ExchangeOnlineManagement
+    Import-Module ExchangeOnlineManagement -DisableNameChecking
     Connect-ExchangeOnline -DelegatedOrganization $tenant
 }
 
+#TODO; test if we need to login
+Write-Host "Login to the Exchange Online for Security & Compliance PowerShell"
+Connect-IPPSSession
+
 # All these types are effectively turned into the PowerShell cmdlet: Get-PolicyType
-# If there is a PowerShell cmdlet that does not have accompanying New-PolicyType version, then add ?? at the end
-# If the Get cmdlet requires parameters to get the information then add | at then end followed by the arguments seperated by !
+# If there is a PowerShell cmdlet that does not have accompanying 'New-PolicyType' cmdlet (used to get parameter descriptions), then add ?? at the end
+# If the 'Get-' cmdlet requires parameters to get the information then add | at then end followed by the arguments seperated by !
+
 $policyTypes =  "AntiPhishPolicy",
                 "HostedContentFilterPolicy",
                 "HostedConnectionFilterPolicy",
@@ -36,15 +42,17 @@ $policyTypes =  "AntiPhishPolicy",
                 "AtpPolicyForO365??",
                 "TenantAllowBlockListItems|ListType!Sender",
                 "TenantAllowBlockListItems|ListType!Url",
-                "TenantAllowBlockListItems|ListType!FileHash"
+                "TenantAllowBlockListItems|ListType!FileHash",
+                "ProtectionAlert@"
 $helpDescriptions = @()
 $data = @()
 
 foreach ($policyType in $policyTypes){
 
     $descriptionsForPolicy = @()
-    $getHelp = $true    
+    $getHelp = $true
     $command = "Get-$policyType"
+    $alertPolicies = $false
     
     if ($policyType -match "\|"){
         $policyTypeAndArgument = $policyType.Split("|")
@@ -53,8 +61,15 @@ foreach ($policyType in $policyTypes){
         $command = "Get-$policyType -$($argumentAndValue[0]) $($argumentAndValue[1])"
     }
     if ($policyType -match "\?"){
-        $command = $policyType = $command.Trim("??")
+        $command = $command.Trim("??")
+        $policyType = $policyType.Trim("??")
         $getHelp = $false
+    }
+    if ($policyType -match "\@"){
+        $command = $command.Trim("@")
+        $policyType = $policyType.Trim("@")
+        $getHelp = $false
+        $alertPolicies = $true
     }
     
     Write-Host "Get information for Policy Type: $policyType"
@@ -79,24 +94,44 @@ foreach ($policyType in $policyTypes){
         }
         # Go through all policies and arrange the information into the final array which will be written to JSON
         
-        foreach ($record in $output){
+        if ($alertPolicies){
+            foreach ($record in $output){
 
-            foreach ($member in ($record | Get-Member -MemberType Property)){
-                $value = $record.($member.Name)
-                if ($null -ne $value){
-                if ($value.GetType().Name -eq "ArrayList"){
-                    $value = $value -join ","
-                }}
                 $data += @{
                     CustomerName = $customerName
                     PolicyType = $policyType
                     Policy = $record.Name
-                    Property = $member.Name
-                    Value = $value
-                    Description = ($helpDescriptions | Where-Object { $_.policyType -eq $policyType -and $_.name -eq $member.Name}).Description
+                    Property = ""
+                    Value = $(@{$true = "Disabled"; $false = "Enabled"}[$record.Disabled])
+                    Description = $record.Comment
+                    Category = $record.Category
+                    Severity = $record.Severity
                 }
-            }
 
+            }
+        }
+        else{
+            foreach ($record in $output){
+
+                foreach ($member in ($record | Get-Member -MemberType Property)){
+                    $value = $record.($member.Name)
+                    if ($null -ne $value){
+                    if ($value.GetType().Name -eq "ArrayList"){
+                        $value = $value -join ","
+                    }}
+                    $data += @{
+                        CustomerName = $customerName
+                        PolicyType = $policyType
+                        Policy = $record.Name
+                        Property = $member.Name
+                        Value = $value
+                        Description = ($helpDescriptions | Where-Object { $_.policyType -eq $policyType -and $_.name -eq $member.Name}).Description
+                        Category = ""
+                        Severity = ""
+                    }
+                }
+
+            }
         }
 
     }
@@ -107,7 +142,7 @@ foreach ($policyType in $policyTypes){
 }
 
 # Convert data and export to JSON, then import back (seems redundant, but this is due to a weird bug when directly exporting to Excel) and export to Excel
-$sortedData = $data | Select-Object CustomerName, PolicyType, Policy, Property, Value, Description
+$sortedData = $data | Select-Object CustomerName, PolicyType, Policy, Property, Value, Description, Category, Severity
 $sortedData | ConvertTo-Json -Depth 2 | Out-File "defender-office365-policies.json"
 $excel = Get-Content "defender-office365-policies.json" | ConvertFrom-Json | Export-Excel -Path "defender-office365-policies.xlsx" -Autosize -Table definitions -FreezeTopRow -PassThru
 $sheet = $excel.Workbook.Worksheets["Sheet1"]
