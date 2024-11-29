@@ -108,3 +108,7 @@ Get-HostedOutboundSpamFilterPolicy
 **UI:** _Policies & rules > Threat policies > Tenant Allow/Block List > Spoofed Senders_
 
 > Use the Get-TenantAllowBlockListSpoofItems cmdlet to view spoofed sender entries in the Tenant Allow/Block List.
+
+# TODO
+- Add retrieval of domains
+- Get the current Rule configuration
